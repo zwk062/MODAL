@@ -27,10 +27,10 @@ function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 
 
 % 输出：
-% frequency sliding - 信号在每个频带内的瞬时频率（矩阵大小：频带数 x 样本数）。
-% bands - 每个检测频带的边界（矩阵大小：频带数 x 2，表示频带的上下界）。
-% bandpow - 信号在每个检测频带内的平均功率（矩阵大小：频带数 x 样本数）。
-% bandphase - 信号在每个检测频带内的瞬时相位（矩阵大小：频带数 x 样本数）。
+% frequency sliding - 信号在每个频带内的瞬时频率（矩阵大小：频带数 x 样本数）。[1,1000]
+% bands - 每个检测频带的边界（矩阵大小：频带数 x 2，表示频带的上下界）。[1,2]
+% bandpow - 信号在每个检测频带内的平均功率（矩阵大小：频带数 x 样本数）。 [1,1000]
+% bandphase - 信号在每个检测频带内的瞬时相位（矩阵大小：频带数 x 样本数）。[1,1000]
 % 核心步骤：
 % 1. 自适应识别超过背景1/f的窄带振荡，
 %    方法参考Lega, Jacobs, & Kahana（2012年，Hippocampus期刊）。
@@ -49,7 +49,7 @@ wavefreqs = params.wavefreqs; % 提取用于分析的频率范围
 if isfield(params, 'local_winsize_sec') 
     wins = params.local_winsize_sec * params.srate; % 如果提供了局部窗口大小（以秒为单位），计算对应的采样点数
 else
-    wins = params.srate .* 10; % 默认情况下，单窗口长度为10秒
+    wins = params.srate .* 10; % 默认情况下，单窗口长度为10秒 1000*10
 end
 if isfield(params, 'wavecycles')
     wavecycles = params.wavecycles; % 如果提供了小波周期数，则使用提供的值
@@ -81,17 +81,18 @@ if isfield(params, 'bad_data')
 end
 % 核心步骤1：对1/f进行拟合以自适应地识别频带
 [bands, bandidx, bandpow] = GetBands(wavefreqs, pow);
-% freq_bands: 每个频带的频率范围，大小为 [N, 2] 的矩阵  [9.5, 10.5] Hz ，N为识别到几个
+% bands: 每个频带的频率范围，大小为 [N, 2] 的矩阵  [9.5, 10.5] Hz ，N为频带数
 % bandidx: 每个频带对应的 wavefreqs 索引，存储为 cell 数组 [18 19 20] （wavefreqs(19) = 10）
 % bandpow: 每个频带在时间上的平均功率值，大小为 [N, length(signal)] 
 
 % 核心步骤 #2：基于 MX Cohen 的频率滑动代码
 %% 滤波数据
 % 应用带通滤波器，带有 15% 的过渡区域
-FS = zeros(size(bands,1),length(signal)).*NaN; % 初始化 FS（即频带内的所有频率滑动估计）
-bandphases = zeros(size(bands,1),length(signal)).*NaN; % 初始化相位
+FS = zeros(size(bands,1),length(signal)).*NaN; % 初始化 FS（即频带内的所有频率滑动估计） [频带数, 信号长度] （N，1000）
+bandphases = zeros(size(bands,1),length(signal)).*NaN; % 初始化相位 （N，1000）
+
 for iBand = 1:size(bands,1) % 遍历每个频带
-    freq_bands = bands(iBand,:); % 获取当前频带的上下边界
+    freq_bands = bands(iBand,:); % 获取当前频带的上下边界 [9.5, 10.5]
     trans_width = .15; % 设置过渡区域宽度为 15%
     idealresponse = [ 0 0 1 1 0 0 ]; % 理想滤波器响应
     filtfreqbounds = [ 0 (1-trans_width)*freq_bands(1) freq_bands(1) freq_bands(2) freq_bands(2)*(1+trans_width) params.srate/2 ]/(params.srate/2); % 滤波频率边界
@@ -102,7 +103,7 @@ for iBand = 1:size(bands,1) % 遍历每个频带
     % 对滤波后的信号进行 Hilbert 变换
     temphilbert = hilbert(filtered_signal); % 计算 Hilbert 变换
     anglehilbert = angle(temphilbert); % 提取瞬时相位
-    bandphases(iBand,:) = anglehilbert; % 存储频带内的相位
+    bandphases(iBand,:) = anglehilbert; % 存储频带内的相位 % （N，1000）
     
     % 来自 MX Cohen 的代码
     frompaper = params.srate * diff(unwrap(anglehilbert)) / (2 * pi); % 根据 Cohen 2014 论文计算瞬时频率
@@ -133,12 +134,13 @@ for iBand = 1:size(bands,1) % 遍历每个频带
         outside_idx = find([below_idx + above_idx] == 1); % 识别频带范围外的索引
         median_of_meds(outside_idx) = NaN; % 将频带范围外的频率估计值设为 NaN
     end
-    FS(iBand,:) = median_of_meds; % 存储频带内的所有频率滑动估计
+    FS(iBand,:) = median_of_meds; % 存储频带内的所有频率滑动估计 （N，1000）
 end
 % 可选的核心步骤 #3：  
 % 在较小的时间窗口内进行 1/f 拟合，并将低于 1/f 拟合的功率、相位和频率估计替换为 NaN
 if size(bands,1)>0 % 检查是否检测到频带
-    frequency_sliding = FS;zeros([size(FS) length(wins)]); % 初始化频率滑动变量
+    frequency_sliding = FS;zeros([size(FS) length(wins)]); % 初始化频率滑动变量 wins是个标量 [size(bands, 1), length(signal), length(wins)] [1, 1000, 1]
+
     for iW = 1:length(wins) % 遍历不同的局部拟合窗口大小
         winsize = wins(iW); % 获取当前窗口大小
         for iWin = 1:winsize:length(signal) % 遍历信号，按照窗口大小划分
@@ -159,7 +161,7 @@ if size(bands,1)>0 % 检查是否检测到频带
     end
     
     % 对不同窗口大小的结果取 NaN 平均值，从而在多个窗口大小的情况下，将超过 1/f 拟合的点保留
-    frequency_sliding = nanmean(frequency_sliding, 3); 
+    frequency_sliding = nanmean(frequency_sliding, 3);  % [频带数, 信号长度] [1,1000]
 else % 如果没有检测到任何频带
     frequency_sliding = NaN;
 end
@@ -202,6 +204,7 @@ for iBand = 1:max(unique(bw)) % 遍历所有检测到的频带
     end
 end
 % 结束频带识别子函数
+
 % 核心步骤 #3：移除低于局部 1/f 拟合的频率滑动估计
 function [frequency_sliding] = fit_one_over_f_windows(frequency_sliding, wavefreqs, pow, bandidx)
 % 输入：所有频带内的频率滑动估计
