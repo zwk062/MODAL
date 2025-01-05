@@ -1,3 +1,7 @@
+%f0 = 10; % 正弦波频率为 10 Hz
+%t = 0:1/1000:1-1/1000; % 时间向量，采样率 1000 Hz，时长 1 秒
+%signal = sin(2 * pi * f0 * t); % 10 Hz 的正弦波
+
 function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 % 多重振荡检测算法 (MOD-AL)
 % 该算法用于计算（神经）信号的瞬时功率、相位和频率，
