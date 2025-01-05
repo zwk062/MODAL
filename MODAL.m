@@ -21,7 +21,7 @@ function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 
 %f0 = 10; % 正弦波频率为 10 Hz
 %t = 0:1/1000:1-1/1000; % 时间向量，采样率 1000 Hz，时长 1 秒
-%signal = sin(2 * pi * f0 * t); % 10 Hz 的正弦波
+%signal = sin(2 * pi * f0 * t); % 10 Hz 的正弦波 （1000，1）
 %params.wavefreqs = 1:0.5:30; % 1 到 30 Hz 的频率范围
 %params.srate = 1000; % 采样率为 1000 Hz
 
@@ -67,12 +67,12 @@ if size(signal, 2) > size(signal, 1)
 end
 % 确保信号是以均值为中心的（均值中心化），
 % 这样希尔伯特变换以及功率/相位估计才有效
-signal = signal - nanmean(signal);
+signal = signal - nanmean(signal); %（1000，1）
 % 自适应部分
 % 使用 Kahana 的 eegtoolbox 提供的函数
 % http://memory.psych.upenn.edu/files/software/eeg_toolbox/eeg_toolbox.zip
 % 使用小波提取频率 x 时间矩阵的功率估计值
-[~, pow] = multiphasevec2(params.wavefreqs, signal', params.srate, wavecycles);
+[~, pow] = multiphasevec2(params.wavefreqs, signal', params.srate, wavecycles); %(59,1000) 59：wavefreqs个数 pow：信号在某个频率和时间点上的功率大小
 % 处理坏数据：将坏时间段的功率值替换为 NaN。
 % 在频带识别时会排除这些数据
 if isfield(params, 'bad_data')
@@ -81,6 +81,10 @@ if isfield(params, 'bad_data')
 end
 % 核心步骤1：对1/f进行拟合以自适应地识别频带
 [bands, bandidx, bandpow] = GetBands(wavefreqs, pow);
+% freq_bands: 每个频带的频率范围，大小为 [N, 2] 的矩阵  [9.5, 10.5] Hz ，N为识别到几个
+% bandidx: 每个频带对应的 wavefreqs 索引，存储为 cell 数组 [18 19 20] （wavefreqs(19) = 10）
+% bandpow: 每个频带在时间上的平均功率值，大小为 [N, length(signal)] 
+
 % 核心步骤 #2：基于 MX Cohen 的频率滑动代码
 %% 滤波数据
 % 应用带通滤波器，带有 15% 的过渡区域
