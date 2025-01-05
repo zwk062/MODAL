@@ -24,7 +24,7 @@ function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 %signal = sin(2 * pi * f0 * t); % 10 Hz 的正弦波
 %params.wavefreqs = 1:0.5:30; % 1 到 30 Hz 的频率范围
 %params.srate = 1000; % 采样率为 1000 Hz
-% wavecycles = 6; % 每个小波包含 6 个周期
+
 
 % 输出：
 % frequency sliding - 信号在每个频带内的瞬时频率（矩阵大小：频带数 x 样本数）。
