@@ -1,7 +1,3 @@
-%f0 = 10; % 正弦波频率为 10 Hz
-%t = 0:1/1000:1-1/1000; % 时间向量，采样率 1000 Hz，时长 1 秒
-%signal = sin(2 * pi * f0 * t); % 10 Hz 的正弦波
-
 function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 % 多重振荡检测算法 (MOD-AL)
 % 该算法用于计算（神经）信号的瞬时功率、相位和频率，
@@ -9,6 +5,7 @@ function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 % 作者：Andrew J Watrous，2017年10月
 % 瞬时频率估计采用“频率滑动”（Frequency Sliding）方法
 % 详细说明见：http://mikexcohen.com/data/Cohen2014_freqslide.pdf
+
 % 输入：
 % signal - 待分析的信号，可以是任何神经时间序列数据。
 % params 必须包括以下参数：
@@ -21,6 +18,14 @@ function [frequency_sliding,bands,bandpow,bandphases] = MODAL(signal,params)
 % 并将返回所有时间点的功率、相位和频率估计。
 % params.crop_fs = 布尔值，是否裁剪超出频带的频率估计。
 % wavecycles - 小波周期数（默认为6）。
+
+%f0 = 10; % 正弦波频率为 10 Hz
+%t = 0:1/1000:1-1/1000; % 时间向量，采样率 1000 Hz，时长 1 秒
+%signal = sin(2 * pi * f0 * t); % 10 Hz 的正弦波
+%params.wavefreqs = 1:0.5:30; % 1 到 30 Hz 的频率范围
+%params.srate = 1000; % 采样率为 1000 Hz
+% wavecycles = 6; % 每个小波包含 6 个周期
+
 % 输出：
 % frequency sliding - 信号在每个频带内的瞬时频率（矩阵大小：频带数 x 样本数）。
 % bands - 每个检测频带的边界（矩阵大小：频带数 x 2，表示频带的上下界）。
