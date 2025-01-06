@@ -210,8 +210,8 @@ function [frequency_sliding] = fit_one_over_f_windows(frequency_sliding, wavefre
 % 输入：所有频带内的频率滑动估计
 % 输出：高于局部 1/f 拟合的频率滑动估计
 % 与其他子函数相同的拟合过程
-fz = log(wavefreqs);
-local_mean_pow = log(nanmean(pow, 2)); % 使用 nanmean 计算局部平均功率，以处理 bad_data 导致的 NaN 值
+fz = log(wavefreqs); %（1:0.5:30）
+local_mean_pow = log(nanmean(pow, 2)); % 使用 nanmean 计算局部平均功率，以处理 bad_data 导致的 NaN 值 （1，1000）
 [b, ~] = robustfit(fz, local_mean_pow); % 局部 1/f 拟合
 local_fit_line = b(1) + b(2) .* fz; % 计算局部拟合线
 % 检查每个时间点上的频率估计是否高于局部 1/f 拟合线
