@@ -229,7 +229,7 @@ for iB = 1:length(bandidx) % 遍历所有频带
         for iT = 1:length(idx1) % 遍历非 NaN 时间点
             fswf(iT) = dsearchn(wavefreqs', frequency_sliding(iB, idx1(iT))); % 将频率滑动估计值映射到 wavefreqs 索引
         end
-        subz = sub2ind(size(threshpow), fswf, idx1); % 获取二维矩阵中的索引
+        subz = sub2ind(size(threshpow), fswf, idx1); % 获取二维矩阵中的索引 subz 指向 threshpow 中的这些索引点（频率索引为 fswf，时间索引为 idx1）的位置。
         threshvalz = [];
         threshvalz = threshpow(subz); % 检查这些点是否高于阈值
         tmpfs(iB, idx1(find(threshvalz == 0))) = NaN; % 将低于阈值的 FS 估计替换为 NaN
